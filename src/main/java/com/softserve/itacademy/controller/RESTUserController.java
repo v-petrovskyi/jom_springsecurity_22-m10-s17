@@ -5,6 +5,7 @@ import com.softserve.itacademy.dto.ToDoTransformer;
 import com.softserve.itacademy.exception.EntityNotCreatedException;
 import com.softserve.itacademy.exception.EntityNotUpdatedException;
 import com.softserve.itacademy.exception.ErrorResponse;
+import com.softserve.itacademy.exception.UserIsNotOwner;
 import com.softserve.itacademy.model.ToDo;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.service.RoleService;
@@ -105,12 +106,12 @@ public class RESTUserController {
         userService.readById(user_id);
         ToDoDto toDoDto = ToDoTransformer.convertToDto(toDoService.readById(todo_id));
         if (toDoDto.getOwner_id() != user_id) {
-            throw new EntityNotCreatedException("user is not owner");
+            throw new UserIsNotOwner("user is not owner");
         }
         return toDoDto;
     }
 
-    @PutMapping("/{user_id}/todos")
+    @PostMapping("/{user_id}/todos")
     public ResponseEntity<ToDoDto> createToDo(@RequestBody @Valid ToDoDto toDoDto, @PathVariable long user_id, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
@@ -130,12 +131,38 @@ public class RESTUserController {
         return new ResponseEntity<>(ToDoTransformer.convertToDto(toDoService.create(toDo)), HttpStatus.CREATED);
     }
 
+    @PutMapping("/{user_id}/todos/{todo_id}")
+    public ResponseEntity<ToDoDto> updateToDo(@RequestBody @Valid ToDoDto toDoDto, @PathVariable long user_id, BindingResult result, @PathVariable long todo_id) {
+        ToDo toDo = toDoService.readById(todo_id);
+        if (toDo.getOwner().getId() != user_id) {
+            throw new UserIsNotOwner("user is not owner");
+        }
+        if (result.hasErrors()) {
+            StringBuilder errMessage = new StringBuilder();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                errMessage
+                        .append(error.getField())
+                        .append(" - ")
+                        .append(error.getDefaultMessage())
+                        .append(";");
+            }
+            throw new EntityNotUpdatedException(errMessage.toString());
+        }
+        ToDo updatedToDo = ToDoTransformer.convertToEntity(toDoDto, toDo);
+        updatedToDo.setOwner(userService.readById(user_id));
+        updatedToDo.setTasks(toDo.getTasks());
+        updatedToDo.setCollaborators(toDo.getCollaborators());
+        return new ResponseEntity<>(ToDoTransformer.convertToDto(toDoService.update(updatedToDo)), HttpStatus.OK);
+    }
+
+
     @DeleteMapping("/{user_id}/todos/{todo_id}")
     public void deleteToDo(@PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
-        ToDoDto toDoDto = ToDoTransformer.convertToDto(toDoService.readById(todo_id));
-        if (toDoDto.getOwner_id() != user_id) {
-            throw new EntityNotCreatedException("user is not owner");
+        ToDo toDo = toDoService.readById(todo_id);
+        if (toDo.getOwner().getId() != user_id) {
+            throw new UserIsNotOwner("user is not owner");
         }
         toDoService.delete(todo_id);
     }
@@ -152,11 +179,16 @@ public class RESTUserController {
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler
+    private ResponseEntity<ErrorResponse> handleException(UserIsNotOwner e) {
+        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+    }
+
 
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotFoundException e) {
         ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
-
 }
