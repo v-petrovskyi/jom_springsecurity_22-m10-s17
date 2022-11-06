@@ -1,5 +1,7 @@
 package com.softserve.itacademy.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import javax.validation.constraints.Pattern;
 import java.util.List;
@@ -30,13 +32,16 @@ public class User  {
     @Column(name = "password", nullable = false)
     private String password;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "owner", cascade = CascadeType.REMOVE)
     private List<ToDo> myTodos;
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(name = "todo_collaborator",
         joinColumns = @JoinColumn(name = "collaborator_id"),

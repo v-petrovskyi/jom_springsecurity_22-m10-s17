@@ -33,7 +33,7 @@ public class UserController {
     }
 
     @GetMapping("/create")
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     public String create(Model model) {
         model.addAttribute("user", new User());
         model.addAttribute("owner", userRepository.findByEmail(userDetailsService.getCurrentUsername()));
@@ -41,7 +41,7 @@ public class UserController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     public String create(@Validated @ModelAttribute("user") User user, BindingResult result) {
         if (result.hasErrors()) {
             return "create-user";
@@ -53,7 +53,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/read")
-    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
+//    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
     public String read(@PathVariable long id, Model model) {
         User user = userService.readById(id);
         model.addAttribute("user", user);
@@ -62,7 +62,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/update")
-    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
+//    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
     public String update(@PathVariable long id, Model model) {
         User user = userService.readById(id);
         model.addAttribute("user", user);
@@ -73,7 +73,7 @@ public class UserController {
 
 
     @PostMapping("/{id}/update")
-    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
+//    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
     public String update(@PathVariable long id, Model model, @Validated @ModelAttribute("user") User user, @RequestParam("roleId") long roleId, BindingResult result) {
         User oldUser = userService.readById(id);
         if (result.hasErrors()) {
@@ -93,14 +93,14 @@ public class UserController {
 
 
     @GetMapping("/{id}/delete")
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     public String delete(@PathVariable("id") long id) {
         userService.delete(id);
         return "redirect:/users/all";
     }
 
     @GetMapping("/all")
-    @PreAuthorize("hasAuthority('ADMIN')")
+//    @PreAuthorize("hasAuthority('ADMIN')")
     public String getAll(Model model) {
         model.addAttribute("users", userService.getAll());
         model.addAttribute("owner", userRepository.findByEmail(userDetailsService.getCurrentUsername()));
