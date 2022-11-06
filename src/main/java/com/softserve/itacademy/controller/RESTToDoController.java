@@ -6,6 +6,7 @@ import com.softserve.itacademy.exception.EntityNotCreatedException;
 import com.softserve.itacademy.exception.EntityNotUpdatedException;
 import com.softserve.itacademy.exception.ErrorResponse;
 import com.softserve.itacademy.exception.UserIsNotOwner;
+import com.softserve.itacademy.model.Priority;
 import com.softserve.itacademy.model.State;
 import com.softserve.itacademy.model.Task;
 import com.softserve.itacademy.model.ToDo;
@@ -18,9 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
-
 import javax.persistence.EntityNotFoundException;
-import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -54,7 +53,7 @@ public class RESTToDoController {
     }
 
     @PutMapping("/{todo_id}/tasks/{task_id}")
-    public ResponseEntity<TaskDto> updateTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto, @PathVariable String task_id, BindingResult result) {
+    public ResponseEntity<TaskDto> updateTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto, @PathVariable long task_id, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
             List<FieldError> errors = result.getFieldErrors();
@@ -67,15 +66,25 @@ public class RESTToDoController {
             }
             throw new EntityNotUpdatedException(errMessage.toString());
         }
-        ToDo toDo = toDoService.readById(todo_id);
-        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName(taskDto.getState()));
+        Task task = taskService.readById(task_id);
+        task.setName(taskDto.getName());
+        task.setPriority(Priority.valueOf(taskDto.getPriority()));
+        task.setState(stateService.getByName(taskDto.getState()));
+//        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName(taskDto.getState()));
         if(task.getTodo().getId()!=todo_id){
             throw new EntityNotCreatedException("task not exist in this todo");
         }
-        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.create(task)), HttpStatus.CREATED);
+        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.update(task)), HttpStatus.OK);
     }
 
-
+    @DeleteMapping("/{todo_id}/tasks/{task_id}")
+    public void deleteTask(@PathVariable long todo_id, @PathVariable long task_id) {
+        Task task = taskService.readById(task_id);
+        if(task.getTodo().getId()!=todo_id){
+            throw new EntityNotCreatedException("task not exist in this todo");
+        }
+        taskService.delete(task_id);
+    }
 
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
