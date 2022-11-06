@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,7 +66,7 @@ public class RESTUserController {
     }
 
     @PutMapping("/{id}")
-    public void updateUser(@PathVariable long id, @RequestBody @Valid User user, BindingResult result){
+    public void updateUser(@PathVariable long id, @RequestBody @Valid User user, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
             List<FieldError> errors = result.getFieldErrors();
@@ -86,12 +87,12 @@ public class RESTUserController {
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable long id){
+    public void deleteUser(@PathVariable long id) {
         userService.delete(id);
     }
 
     @GetMapping("/{user_id}/todos")
-    public List<ToDoDto> getUsersToDos(@PathVariable long user_id){
+    public List<ToDoDto> getUsersToDos(@PathVariable long user_id) {
         userService.readById(user_id);
         List<ToDoDto> resultList = new ArrayList<>();
         List<ToDo> byUserId = toDoService.getByUserId(user_id);
@@ -99,11 +100,52 @@ public class RESTUserController {
         return resultList;
     }
 
+    @GetMapping("/{user_id}/todos/{todo_id}")
+    public ToDoDto getToDo(@PathVariable long todo_id, @PathVariable long user_id) {
+        userService.readById(user_id);
+        ToDoDto toDoDto = ToDoTransformer.convertToDto(toDoService.readById(todo_id));
+        if (toDoDto.getOwner_id() != user_id) {
+            throw new EntityNotCreatedException("user is not owner");
+        }
+        return toDoDto;
+    }
+
+    @PutMapping("/{user_id}/todos")
+    public ResponseEntity<ToDoDto> createToDo(@RequestBody @Valid ToDoDto toDoDto, @PathVariable long user_id, BindingResult result) {
+        if (result.hasErrors()) {
+            StringBuilder errMessage = new StringBuilder();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                errMessage
+                        .append(error.getField())
+                        .append(" - ")
+                        .append(error.getDefaultMessage())
+                        .append(";");
+            }
+            throw new EntityNotCreatedException(errMessage.toString());
+        }
+        ToDo toDo = ToDoTransformer.convertToEntity(toDoDto, new ToDo());
+        toDo.setCreatedAt(LocalDateTime.now());
+        toDo.setOwner(userService.readById(user_id));
+        return new ResponseEntity<>(ToDoTransformer.convertToDto(toDoService.create(toDo)), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{user_id}/todos/{todo_id}")
+    public void deleteToDo(@PathVariable long todo_id, @PathVariable long user_id) {
+        userService.readById(user_id);
+        ToDoDto toDoDto = ToDoTransformer.convertToDto(toDoService.readById(todo_id));
+        if (toDoDto.getOwner_id() != user_id) {
+            throw new EntityNotCreatedException("user is not owner");
+        }
+        toDoService.delete(todo_id);
+    }
+
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
         ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotCreatedException e) {
         ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
