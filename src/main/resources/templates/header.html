@@ -1,0 +1,33 @@
+<div xmlns:th="http://www.thymeleaf.org"
+     xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" th:href="@{/home}">Home Page</a>
+            </div>
+            <div sec:authorize="isAuthenticated()">
+                <div>
+                    <a class="navbar-brand" th:if="${owner != null}"
+                       th:href="@{'/todos/all/users/' + ${owner.id}}">My To-Dos</a>
+                </div>
+                <div sec:authorize="hasAuthority('ADMIN')">
+                    <a class="navbar-brand" th:href="@{/users/all}">List of Users</a>
+                </div>
+                <div style="display: flex; float: right;">
+                    <form th:action="@{/logout}" th:method="POST">
+                        <table class="navbar-brand">
+                            <tr>
+                                <td style="padding-inline: 10px">Hello</td>
+                                <td><a th:if="${owner != null}"
+                                       th:href="@{'/users/' + ${owner.id} + '/read'}"
+                                       th:text="${owner.firstName}"></a></td>
+                                <td>!</td>
+                                <td style="padding-inline: 10px"><input type="submit" value="LogOut"/></td>
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+</div>
