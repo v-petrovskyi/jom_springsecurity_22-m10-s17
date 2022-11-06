@@ -1,10 +1,14 @@
 package com.softserve.itacademy.controller;
 
+import com.softserve.itacademy.dto.ToDoDto;
+import com.softserve.itacademy.dto.ToDoTransformer;
 import com.softserve.itacademy.exception.EntityNotCreatedException;
 import com.softserve.itacademy.exception.EntityNotUpdatedException;
 import com.softserve.itacademy.exception.ErrorResponse;
+import com.softserve.itacademy.model.ToDo;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.service.RoleService;
+import com.softserve.itacademy.service.ToDoService;
 import com.softserve.itacademy.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,18 +19,21 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 public class RESTUserController {
     private final UserService userService;
     private final RoleService roleService;
+    private final ToDoService toDoService;
 
     @Autowired
-    public RESTUserController(UserService userService, RoleService roleService) {
+    public RESTUserController(UserService userService, RoleService roleService, ToDoService toDoService) {
         this.userService = userService;
         this.roleService = roleService;
+        this.toDoService = toDoService;
     }
 
     @GetMapping
@@ -76,6 +83,20 @@ public class RESTUserController {
         readById.setLastName(user.getLastName());
         readById.setEmail(user.getEmail());
         userService.update(readById);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable long id){
+        userService.delete(id);
+    }
+
+    @GetMapping("/{user_id}/todos")
+    public List<ToDoDto> getUsersToDos(@PathVariable long user_id){
+        userService.readById(user_id);
+        List<ToDoDto> resultList = new ArrayList<>();
+        List<ToDo> byUserId = toDoService.getByUserId(user_id);
+        byUserId.forEach(toDo -> resultList.add(ToDoTransformer.convertToDto(toDo)));
+        return resultList;
     }
 
     @ExceptionHandler
