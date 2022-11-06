@@ -1,13 +1,13 @@
 package com.softserve.itacademy.exception;
 
-public class EntityNotFoundErrorResponse {
+public class EntityNotCreatedErrorResponse {
     private String message;
     private long timestamp;
 
-    public EntityNotFoundErrorResponse() {
+    public EntityNotCreatedErrorResponse() {
     }
 
-    public EntityNotFoundErrorResponse(String message, long timestamp) {
+    public EntityNotCreatedErrorResponse(String message, long timestamp) {
         this.message = message;
         this.timestamp = timestamp;
     }
