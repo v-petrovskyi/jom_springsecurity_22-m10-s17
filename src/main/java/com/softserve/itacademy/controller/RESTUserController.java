@@ -1,6 +1,7 @@
 package com.softserve.itacademy.controller;
 
 import com.softserve.itacademy.exception.EntityNotCreatedException;
+import com.softserve.itacademy.exception.EntityNotUpdatedException;
 import com.softserve.itacademy.exception.ErrorResponse;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.service.RoleService;
@@ -56,6 +57,32 @@ public class RESTUserController {
         return new ResponseEntity<>(userService.create(user), HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}")
+    public void updateUser(@PathVariable long id, @RequestBody @Valid User user, BindingResult result){
+        if (result.hasErrors()) {
+            StringBuilder errMessage = new StringBuilder();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                errMessage
+                        .append(error.getField())
+                        .append(" - ")
+                        .append(error.getDefaultMessage())
+                        .append(";");
+            }
+            throw new EntityNotUpdatedException(errMessage.toString());
+        }
+        User readById = userService.readById(id);
+        readById.setFirstName(user.getFirstName());
+        readById.setLastName(user.getLastName());
+        readById.setEmail(user.getEmail());
+        userService.update(readById);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
+        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotCreatedException e) {
         ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
