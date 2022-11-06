@@ -1,5 +1,7 @@
 package com.softserve.itacademy.controller;
 
+import com.softserve.itacademy.dto.TaskDto;
+import com.softserve.itacademy.dto.TaskTransformer;
 import com.softserve.itacademy.dto.ToDoDto;
 import com.softserve.itacademy.dto.ToDoTransformer;
 import com.softserve.itacademy.exception.EntityNotCreatedException;
@@ -166,6 +168,19 @@ public class RESTUserController {
         }
         toDoService.delete(todo_id);
     }
+
+    @GetMapping("/{user_id}/todos/{todo_id}/tasks")
+    public List<TaskDto> getAllTaskFromToDo(@PathVariable long todo_id, @PathVariable long user_id) {
+        userService.readById(user_id);
+        ToDo toDo = toDoService.readById(todo_id);
+        if (toDo.getOwner().getId() != user_id) {
+            throw new UserIsNotOwner("user is not owner");
+        }
+        List<TaskDto> resultList = new ArrayList<>();
+        toDo.getTasks().forEach(task -> resultList.add(TaskTransformer.convertToDto(task)));
+        return resultList;
+    }
+
 
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
