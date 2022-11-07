@@ -1,13 +1,7 @@
 package com.softserve.itacademy.controller;
 
-import com.softserve.itacademy.dto.TaskDto;
-import com.softserve.itacademy.dto.TaskTransformer;
-import com.softserve.itacademy.dto.ToDoDto;
-import com.softserve.itacademy.dto.ToDoTransformer;
-import com.softserve.itacademy.exception.EntityNotCreatedException;
-import com.softserve.itacademy.exception.EntityNotUpdatedException;
-import com.softserve.itacademy.exception.ErrorResponse;
-import com.softserve.itacademy.exception.UserIsNotOwner;
+import com.softserve.itacademy.dto.*;
+import com.softserve.itacademy.exception.*;
 import com.softserve.itacademy.model.ToDo;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.service.RoleService;
@@ -179,6 +173,35 @@ public class RESTUserController {
         List<TaskDto> resultList = new ArrayList<>();
         toDo.getTasks().forEach(task -> resultList.add(TaskTransformer.convertToDto(task)));
         return resultList;
+    }
+
+    // Collaborators
+
+    @PostMapping("/{user_id}/todos/{todo_id}/collaborators")
+    public ResponseEntity<HttpStatus> addCollaborator(@RequestBody CollaboratorDto collaboratorDto, @PathVariable long todo_id, @PathVariable long user_id){
+        userService.readById(user_id);
+        ToDo toDo = toDoService.readById(todo_id);
+        if (toDo.getOwner().getId() != user_id) {
+            throw new UserIsNotOwner("user is not owner");
+        }
+        if (collaboratorDto.getCollaborator_id()==toDo.getOwner().getId()){
+            throw new ConflictException409("user is owner");
+        }
+        User user = userService.readById(collaboratorDto.getCollaborator_id());
+        if (toDo.getCollaborators().contains(user)){
+            throw new ConflictException409("the user is already on the list of collaborators for this todo");
+        }
+        if (toDo.getCollaborators().add(user)){
+            toDoService.update(toDo);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler
+    private ResponseEntity<ErrorResponse> handleException(ConflictException409 e) {
+        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
 
