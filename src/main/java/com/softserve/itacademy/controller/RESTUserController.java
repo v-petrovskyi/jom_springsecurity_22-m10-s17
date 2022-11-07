@@ -7,6 +7,7 @@ import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.service.RoleService;
 import com.softserve.itacademy.service.ToDoService;
 import com.softserve.itacademy.service.UserService;
+import javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -197,6 +198,29 @@ public class RESTUserController {
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
+
+    @DeleteMapping("/{user_id}/todos/{todo_id}/collaborators")
+    public ResponseEntity<HttpStatus> removeCollaborator(@RequestBody CollaboratorDto collaboratorDto, @PathVariable long todo_id, @PathVariable long user_id){
+        userService.readById(user_id);
+        ToDo toDo = toDoService.readById(todo_id);
+        if (toDo.getOwner().getId() != user_id) {
+            throw new UserIsNotOwner("user is not owner");
+        }
+        if (collaboratorDto.getCollaborator_id()==toDo.getOwner().getId()){
+            throw new ConflictException409("user is owner");
+        }
+        User user = userService.readById(collaboratorDto.getCollaborator_id());
+        if (!toDo.getCollaborators().contains(user)){
+            throw new EntityNotFoundException("user is not collaborator");
+        }
+        if (toDo.getCollaborators().remove(user)){
+            toDoService.update(toDo);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+
 
     @ExceptionHandler
     private ResponseEntity<ErrorResponse> handleException(ConflictException409 e) {
