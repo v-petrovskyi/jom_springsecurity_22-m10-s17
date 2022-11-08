@@ -78,7 +78,7 @@ public class RESTUserController {
         return userService.readById(id);
     }
 
-    @PostMapping
+    @PostMapping("/api/users")
     public ResponseEntity<User> createUser(@RequestBody @Valid User user, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
