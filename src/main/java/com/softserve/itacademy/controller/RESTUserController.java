@@ -76,6 +76,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/users/{id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
     public User returnUser(@PathVariable long id) {
         return userService.readById(id);
     }
@@ -100,6 +101,7 @@ public class RESTUserController {
     }
 
     @PutMapping("/api/users/{id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#id).email.equals(authentication.name)")
     public void updateUser(@PathVariable long id, @RequestBody @Valid User user, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
@@ -116,7 +118,6 @@ public class RESTUserController {
         User readById = userService.readById(id);
         readById.setFirstName(user.getFirstName());
         readById.setLastName(user.getLastName());
-        readById.setEmail(user.getEmail());
         userService.update(readById);
     }
 
@@ -127,6 +128,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/users/{user_id}/todos")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public List<ToDoDto> getUsersToDos(@PathVariable long user_id) {
         userService.readById(user_id);
         List<ToDoDto> resultList = new ArrayList<>();
@@ -136,6 +138,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/users/{user_id}/todos/{todo_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public ToDoDto getToDo(@PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
         ToDoDto toDoDto = ToDoTransformer.convertToDto(toDoService.readById(todo_id));
@@ -146,6 +149,7 @@ public class RESTUserController {
     }
 
     @PostMapping("/api/users/{user_id}/todos")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public ResponseEntity<ToDoDto> createToDo(@RequestBody @Valid ToDoDto toDoDto, @PathVariable long user_id, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
@@ -166,6 +170,7 @@ public class RESTUserController {
     }
 
     @PutMapping("/api/users/{user_id}/todos/{todo_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public ResponseEntity<ToDoDto> updateToDo(@RequestBody @Valid ToDoDto toDoDto, @PathVariable long user_id, BindingResult result, @PathVariable long todo_id) {
         ToDo toDo = toDoService.readById(todo_id);
         if (toDo.getOwner().getId() != user_id) {
@@ -192,6 +197,7 @@ public class RESTUserController {
 
 
     @DeleteMapping("/api/users/{user_id}/todos/{todo_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public void deleteToDo(@PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
         ToDo toDo = toDoService.readById(todo_id);
@@ -202,6 +208,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/users/{user_id}/todos/{todo_id}/tasks")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public List<TaskDto> getAllTaskFromToDo(@PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
         ToDo toDo = toDoService.readById(todo_id);
@@ -216,6 +223,7 @@ public class RESTUserController {
     // Collaborators
 
     @PostMapping("/api/users/{user_id}/todos/{todo_id}/collaborators")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public ResponseEntity<HttpStatus> addCollaborator(@RequestBody CollaboratorDto collaboratorDto, @PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
         ToDo toDo = toDoService.readById(todo_id);
@@ -237,6 +245,7 @@ public class RESTUserController {
     }
 
     @DeleteMapping("/api/users/{user_id}/todos/{todo_id}/collaborators")
+    @PreAuthorize("hasAuthority('ADMIN') or @userServiceImpl.readById(#user_id).email.equals(authentication.name)")
     public ResponseEntity<HttpStatus> removeCollaborator(@RequestBody CollaboratorDto collaboratorDto, @PathVariable long todo_id, @PathVariable long user_id) {
         userService.readById(user_id);
         ToDo toDo = toDoService.readById(todo_id);
@@ -258,6 +267,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todo_id).owner.email.equals(authentication.name)")
     public TaskDto getTask(@PathVariable long task_id, @PathVariable long todo_id){
         Task task = taskService.readById(task_id);
         if(task.getTodo().getId()!=todo_id){
@@ -267,6 +277,7 @@ public class RESTUserController {
     }
 
     @PostMapping("/api/todos/{todo_id}/tasks")
+    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todo_id).owner.email.equals(authentication.name)")
     public ResponseEntity<TaskDto> createTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto) {
         ToDo toDo = toDoService.readById(todo_id);
         Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName("New"));
@@ -274,6 +285,7 @@ public class RESTUserController {
     }
 
     @PutMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todo_id).owner.email.equals(authentication.name)")
     public ResponseEntity<TaskDto> updateTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto, @PathVariable long task_id, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
@@ -299,6 +311,7 @@ public class RESTUserController {
     }
 
     @DeleteMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todo_id).owner.email.equals(authentication.name)")
     public void deleteTask(@PathVariable long todo_id, @PathVariable long task_id) {
         Task task = taskService.readById(task_id);
         if(task.getTodo().getId()!=todo_id){
