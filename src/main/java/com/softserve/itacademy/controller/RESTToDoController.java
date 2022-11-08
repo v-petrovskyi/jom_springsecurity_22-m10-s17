@@ -22,93 +22,42 @@ import org.springframework.web.bind.annotation.*;
 import javax.persistence.EntityNotFoundException;
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/todos")
+//@RestController
+//@RequestMapping("/api/todos")
 public class RESTToDoController {
-    private final TaskService taskService;
-    private final ToDoService toDoService;
-    private final StateService stateService;
-
-    @Autowired
-    public RESTToDoController(TaskService taskService, ToDoService toDoService, StateService stateService) {
-        this.taskService = taskService;
-        this.toDoService = toDoService;
-        this.stateService = stateService;
-    }
-
-    @GetMapping("/{todo_id}/tasks/{task_id}")
-    public TaskDto getTask(@PathVariable long task_id, @PathVariable long todo_id){
-        Task task = taskService.readById(task_id);
-        if(task.getTodo().getId()!=todo_id){
-            throw new EntityNotCreatedException("task not exist in this todo");
-        }
-        return TaskTransformer.convertToDto(task);
-    }
-
-    @PostMapping("/{todo_id}/tasks")
-    public ResponseEntity<TaskDto> createTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto) {
-        ToDo toDo = toDoService.readById(todo_id);
-        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName("New"));
-        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.create(task)), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{todo_id}/tasks/{task_id}")
-    public ResponseEntity<TaskDto> updateTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto, @PathVariable long task_id, BindingResult result) {
-        if (result.hasErrors()) {
-            StringBuilder errMessage = new StringBuilder();
-            List<FieldError> errors = result.getFieldErrors();
-            for (FieldError error : errors) {
-                errMessage
-                        .append(error.getField())
-                        .append(" - ")
-                        .append(error.getDefaultMessage())
-                        .append(";");
-            }
-            throw new EntityNotUpdatedException(errMessage.toString());
-        }
-        Task task = taskService.readById(task_id);
-        task.setName(taskDto.getName());
-        task.setPriority(Priority.valueOf(taskDto.getPriority()));
-        task.setState(stateService.getByName(taskDto.getState()));
-//        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName(taskDto.getState()));
-        if(task.getTodo().getId()!=todo_id){
-            throw new EntityNotCreatedException("task not exist in this todo");
-        }
-        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.update(task)), HttpStatus.OK);
-    }
-
-    @DeleteMapping("/{todo_id}/tasks/{task_id}")
-    public void deleteTask(@PathVariable long todo_id, @PathVariable long task_id) {
-        Task task = taskService.readById(task_id);
-        if(task.getTodo().getId()!=todo_id){
-            throw new EntityNotCreatedException("task not exist in this todo");
-        }
-        taskService.delete(task_id);
-    }
-
-    @ExceptionHandler
-    private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
-        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler
-    private ResponseEntity<ErrorResponse> handleException(EntityNotCreatedException e) {
-        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler
-    private ResponseEntity<ErrorResponse> handleException(UserIsNotOwner e) {
-        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
-    }
 
 
-    @ExceptionHandler
-    private ResponseEntity<ErrorResponse> handleException(EntityNotFoundException e) {
-        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
-        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
-    }
+//    @Autowired
+//    public RESTToDoController(TaskService taskService, ToDoService toDoService, StateService stateService) {
+//        this.taskService = taskService;
+//        this.toDoService = toDoService;
+//        this.stateService = stateService;
+//    }
+
+//
+//    @ExceptionHandler
+//    private ResponseEntity<ErrorResponse> handleException(EntityNotUpdatedException e) {
+//        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+//        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+//    }
+//
+//    @ExceptionHandler
+//    private ResponseEntity<ErrorResponse> handleException(EntityNotCreatedException e) {
+//        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+//        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+//    }
+//
+//    @ExceptionHandler
+//    private ResponseEntity<ErrorResponse> handleException(UserIsNotOwner e) {
+//        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+//        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+//    }
+//
+//
+//    @ExceptionHandler
+//    private ResponseEntity<ErrorResponse> handleException(EntityNotFoundException e) {
+//        ErrorResponse response = new ErrorResponse(e.getMessage(), System.currentTimeMillis());
+//        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+//    }
 
 }

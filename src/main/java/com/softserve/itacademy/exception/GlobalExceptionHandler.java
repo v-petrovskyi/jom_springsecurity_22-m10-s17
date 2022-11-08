@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -41,10 +42,17 @@ public class GlobalExceptionHandler {
         return getModelAndView(request, HttpStatus.NOT_FOUND, exception);
     }
 
+/*
     @ExceptionHandler(AccessDeniedException.class)
     @ResponseStatus(value = HttpStatus.FORBIDDEN)
     public ModelAndView accessDeniedErrorHandler(HttpServletRequest request, Exception exception) {
         return getModelAndView(request, HttpStatus.FORBIDDEN, exception);
+    }
+*/
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> accessDeniedErrorHandler(Exception exception) {
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)

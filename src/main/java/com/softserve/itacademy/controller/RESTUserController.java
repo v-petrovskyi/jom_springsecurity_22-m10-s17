@@ -2,26 +2,24 @@ package com.softserve.itacademy.controller;
 
 import com.softserve.itacademy.dto.*;
 import com.softserve.itacademy.exception.*;
+import com.softserve.itacademy.model.Priority;
+import com.softserve.itacademy.model.Task;
 import com.softserve.itacademy.model.ToDo;
 import com.softserve.itacademy.model.User;
 import com.softserve.itacademy.security.JwtTokenProvider;
-import com.softserve.itacademy.service.RoleService;
-import com.softserve.itacademy.service.ToDoService;
-import com.softserve.itacademy.service.UserService;
-import com.softserve.itacademy.service.impl.UserServiceImpl;
+import com.softserve.itacademy.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
-
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
 import java.time.LocalDateTime;
@@ -31,22 +29,25 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-//@RequestMapping("/api/users")
 public class RESTUserController {
     private final UserService userService;
     private final RoleService roleService;
     private final ToDoService toDoService;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final TaskService taskService;
+    private final StateService stateService;
 
 
     @Autowired
-    public RESTUserController(UserService userService, AuthenticationManager authenticationManager, RoleService roleService, ToDoService toDoService, JwtTokenProvider jwtTokenProvider) {
+    public RESTUserController(UserService userService, AuthenticationManager authenticationManager, RoleService roleService, ToDoService toDoService, JwtTokenProvider jwtTokenProvider, TaskService taskService, StateService stateService) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.roleService = roleService;
         this.toDoService = toDoService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.taskService = taskService;
+        this.stateService = stateService;
     }
     @PostMapping("/api/login")
     public ResponseEntity login(@RequestBody AuthenticationRequestDto requestDto) {
@@ -69,6 +70,7 @@ public class RESTUserController {
     }
 
     @GetMapping("/api/users")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public List<User> getAll() {
         return userService.getAll();
     }
@@ -79,6 +81,7 @@ public class RESTUserController {
     }
 
     @PostMapping("/api/users")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<User> createUser(@RequestBody @Valid User user, BindingResult result) {
         if (result.hasErrors()) {
             StringBuilder errMessage = new StringBuilder();
@@ -118,6 +121,7 @@ public class RESTUserController {
     }
 
     @DeleteMapping("/api/users/{id}")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public void deleteUser(@PathVariable long id) {
         userService.delete(id);
     }
@@ -252,6 +256,57 @@ public class RESTUserController {
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
+
+    @GetMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    public TaskDto getTask(@PathVariable long task_id, @PathVariable long todo_id){
+        Task task = taskService.readById(task_id);
+        if(task.getTodo().getId()!=todo_id){
+            throw new EntityNotCreatedException("task not exist in this todo");
+        }
+        return TaskTransformer.convertToDto(task);
+    }
+
+    @PostMapping("/api/todos/{todo_id}/tasks")
+    public ResponseEntity<TaskDto> createTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto) {
+        ToDo toDo = toDoService.readById(todo_id);
+        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName("New"));
+        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.create(task)), HttpStatus.CREATED);
+    }
+
+    @PutMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    public ResponseEntity<TaskDto> updateTask(@PathVariable long todo_id, @RequestBody TaskDto taskDto, @PathVariable long task_id, BindingResult result) {
+        if (result.hasErrors()) {
+            StringBuilder errMessage = new StringBuilder();
+            List<FieldError> errors = result.getFieldErrors();
+            for (FieldError error : errors) {
+                errMessage
+                        .append(error.getField())
+                        .append(" - ")
+                        .append(error.getDefaultMessage())
+                        .append(";");
+            }
+            throw new EntityNotUpdatedException(errMessage.toString());
+        }
+        Task task = taskService.readById(task_id);
+        task.setName(taskDto.getName());
+        task.setPriority(Priority.valueOf(taskDto.getPriority()));
+        task.setState(stateService.getByName(taskDto.getState()));
+//        Task task = TaskTransformer.convertToEntity(taskDto, toDo, stateService.getByName(taskDto.getState()));
+        if(task.getTodo().getId()!=todo_id){
+            throw new EntityNotCreatedException("task not exist in this todo");
+        }
+        return new ResponseEntity<>(TaskTransformer.convertToDto(taskService.update(task)), HttpStatus.OK);
+    }
+
+    @DeleteMapping("/api/todos/{todo_id}/tasks/{task_id}")
+    public void deleteTask(@PathVariable long todo_id, @PathVariable long task_id) {
+        Task task = taskService.readById(task_id);
+        if(task.getTodo().getId()!=todo_id){
+            throw new EntityNotCreatedException("task not exist in this todo");
+        }
+        taskService.delete(task_id);
+    }
+
 
 
     @ExceptionHandler
