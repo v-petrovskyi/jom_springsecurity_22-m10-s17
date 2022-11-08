@@ -16,17 +16,17 @@ public class TaskDto {
     private long todoId;
 
     @NotNull
-    private long stateId;
+    private String state;
 
     public TaskDto() {
     }
 
-    public TaskDto(long id, String name, String priority, long todoId, long stateId) {
+    public TaskDto(long id, String name, String priority, long todoId, String state) {
         this.id = id;
         this.name = name;
         this.priority = priority;
         this.todoId = todoId;
-        this.stateId = stateId;
+        this.state = state;
     }
 
     public long getId() {
@@ -61,11 +61,11 @@ public class TaskDto {
         this.todoId = todoId;
     }
 
-    public long getStateId() {
-        return stateId;
+    public void setState(String state) {
+        this.state = state;
     }
 
-    public void setStateId(long stateId) {
-        this.stateId = stateId;
+    public String getState() {
+        return state;
     }
 }

@@ -10,7 +10,6 @@ import com.softserve.itacademy.service.StateService;
 import com.softserve.itacademy.service.TaskService;
 import com.softserve.itacademy.service.ToDoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -75,23 +74,23 @@ public class TaskController {
         return "update-task";
     }
 
-    @PostMapping("/{task_id}/update/todos/{todo_id}")
-//    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todoId).owner.email.equals(authentication.name)")
-    public String update(@PathVariable("task_id") long taskId, @PathVariable("todo_id") long todoId, Model model,
-                         @Validated @ModelAttribute("task")TaskDto taskDto, BindingResult result) {
-        if (result.hasErrors()) {
-            model.addAttribute("priorities", Priority.values());
-            model.addAttribute("states", stateService.getAll());
-            return "update-task";
-        }
-        Task task = TaskTransformer.convertToEntity(
-                taskDto,
-                todoService.readById(taskDto.getTodoId()),
-                stateService.readById(taskDto.getStateId())
-        );
-        taskService.update(task);
-        return "redirect:/todos/" + todoId + "/tasks";
-    }
+//    @PostMapping("/{task_id}/update/todos/{todo_id}")
+////    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todoId).owner.email.equals(authentication.name)")
+//    public String update(@PathVariable("task_id") long taskId, @PathVariable("todo_id") long todoId, Model model,
+//                         @Validated @ModelAttribute("task")TaskDto taskDto, BindingResult result) {
+//        if (result.hasErrors()) {
+//            model.addAttribute("priorities", Priority.values());
+//            model.addAttribute("states", stateService.getAll());
+//            return "update-task";
+//        }
+//        Task task = TaskTransformer.convertToEntity(
+//                taskDto,
+//                todoService.readById(taskDto.getTodoId()),
+//                stateService.readById(taskDto.getState())// todo не працює бо я змінив TaskDTO
+//        );
+//        taskService.update(task);
+//        return "redirect:/todos/" + todoId + "/tasks";
+//    }
 
     @GetMapping("/{task_id}/delete/todos/{todo_id}")
 //    @PreAuthorize("hasAuthority('ADMIN') or @toDoServiceImpl.readById(#todoId).owner.email.equals(authentication.name)")

@@ -36,9 +36,9 @@
             <label class="control-label" for="state">Status:</label>
             <select class="form-control" name="stateId" id="state">
                         <span th:each="state : ${states}">
-                            <option th:if="${state.id == task.stateId}" th:value="${state.id}" th:selected="${true}"
+                            <option th:if="${state.id == task.state}" th:value="${state.id}" th:selected="${true}"
                                     th:text="${state.name}"/>
-                            <option th:unless="${state.id == task.stateId}" th:value="${state.id}"
+                            <option th:unless="${state.id == task.state}" th:value="${state.id}"
                                     th:text="${state.name}"/>
                         </span>
             </select>

@@ -59,6 +59,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return users.isEmpty() ? new ArrayList<>() : users;
     }
 
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
     @Override // method for security from UserDetailsService
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findByEmail(email);
